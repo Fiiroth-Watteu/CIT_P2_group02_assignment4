@@ -19,7 +19,14 @@ export interface Overview {
  * try/catch or with a check, and say in a comment which you chose and why.
  */
 export async function firstCourseTitle(studentId: string): Promise<string | undefined> {
-  // TODO
+  // wip
+  try {
+    const foundStudent = coursesFor(studentId);
+    
+  } catch (error) {
+    return "student not found";
+  }
+  
   throw new Error('not implemented');
 }
 
