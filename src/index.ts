@@ -5,10 +5,10 @@
 // as often as you like.
 
 import { pool } from './db.js';
-// import {
-//   listStudents, findStudent, studentsIn, coursesFor,
-//   studentsPerDepartment, insertStudent, deleteStudent,
-// } from './queries.js';
+ import {
+   listStudents, findStudent, studentsIn, coursesFor,
+   studentsPerDepartment, insertStudent, deleteStudent,
+ } from './queries.js';
 // import { enrolInTypeScript } from './transaction.js';
 // import { transcriptOf, transcriptOrUndefined, enrolWithProcedure } from './procedures.js';
 // import { firstCourseTitle, overview, overviewSlowly, removeAndCheckBroken, removeAndCheck } from './async.js';
@@ -20,18 +20,18 @@ await pool.query("DELETE FROM student WHERE id = '90000'");
 console.log('connected');
 
 // --- Part A ---
-// console.log((await listStudents(5, 0)).map(s => s.id));   // 00128 12345 19991 23121 44553
-// console.log((await listStudents(5, 5)).map(s => s.id));   // 45678 54321 55739 70557 76543
-// console.log(await findStudent('00128'));
+ console.log((await listStudents(5, 0)).map(s => s.id));   // 00128 12345 19991 23121 44553
+ console.log((await listStudents(5, 5)).map(s => s.id));   // 45678 54321 55739 70557 76543
+ console.log(await findStudent('00128'));
 //   { id: '00128', name: 'Zhang', deptName: 'Comp. Sci.', totCred: 102 }
-// console.log(await findStudent('99999'));                  // undefined
-// console.log((await studentsIn('Comp. Sci.')).map(s => s.name));
+ console.log(await findStudent('99999'));                  // undefined
+ console.log((await studentsIn('Comp. Sci.')).map(s => s.name));
 //   [ 'Brown', 'Shankar', 'Williams', 'Zhang' ]
-// console.log(await coursesFor('00128'));
+ console.log(await coursesFor('00128'));
 //   [ { courseId: 'CS-101', title: 'Intro. to Computer Science', grade: '12' },
 //     { courseId: 'CS-347', title: 'Database System Concepts', grade: '10' } ]
 //   Grades on the Danish scale, because the query calls danish_grade.
-// console.log(await coursesFor('70557'));                   // []
+ console.log(await coursesFor('70557'));                   // []
 // console.log(await studentsPerDepartment());
 //   [ { deptName: 'Biology', students: 1 }, { deptName: 'Comp. Sci.', students: 4 }, ... ]
 // console.log(typeof (await studentsPerDepartment())[0].students);   // number
@@ -46,8 +46,8 @@ console.log('connected');
 
 // --- Part B2 and B3: the routines in the database ---
 // First check that danish_grade, from the database exercises, is still there:
-// console.log((await pool.query(
-//   "SELECT danish_grade('A') AS a, danish_grade('C-') AS c, danish_grade(NULL) AS n")).rows[0]);
+  console.log((await pool.query(
+   "SELECT danish_grade('A') AS a, danish_grade('C-') AS c, danish_grade(NULL) AS n")).rows[0]);
 //   { a: '12', c: '02', n: null }
 // console.log(await transcriptOf('00128'));
 //   two rows: CS-101 with 12, CS-347 with 10
