@@ -36,22 +36,64 @@ export interface DeptCount {
 
 // --- A1. Reading ----------------------------------------------------------
 
+
 /** A page of students, ordered by id. */
 export async function listStudents(limit: number, offset: number): Promise<Student[]> {
-  // TODO
-  throw new Error('not implemented');
+  // Select the requested page of students in ascending ID order.
+  // $1 and $2 safely pass the limit and offset as query parameters.
+  // Cast numeric columns to integers and rename them for TypeScript.
+  const result = await pool.query<Student>(
+    `SELECT
+       id,
+       name,
+       dept_name AS "deptName",
+       tot_cred::int AS "totCred"
+     FROM student
+     ORDER BY id
+     LIMIT $1 OFFSET $2`,
+    [limit, offset]
+  );
+
+  // Return the rows as an array of Student objects.
+  return result.rows;
 }
+
 
 /** One student, or undefined when there is no such id. */
 export async function findStudent(id: string): Promise<Student | undefined> {
-  // TODO
-  throw new Error('not implemented');
+  // Find the student whose ID matches the supplied parameter.
+  const result = await pool.query<Student>(
+    `SELECT
+       id,
+       name,
+       dept_name AS "deptName",
+       tot_cred::int AS "totCred"
+     FROM student
+     WHERE id = $1`,
+    [id]
+  );
+
+  // Return the first matching student, or undefined if no row exists.
+  return result.rows[0];
 }
 
 /** The students of one department, ordered by name. */
 export async function studentsIn(deptName: string): Promise<Student[]> {
-  // TODO
-  throw new Error('not implemented');
+  // Select students belonging to the requested department.
+  const result = await pool.query<Student>(
+    `SELECT
+       id,
+       name,
+       dept_name AS "deptName",
+       tot_cred::int AS "totCred"
+     FROM student
+     WHERE dept_name = $1
+     ORDER BY name`,
+    [deptName]
+  );
+
+  // Return all matching students as an array.
+  return result.rows;
 }
 
 // --- A2. A join -----------------------------------------------------------
@@ -66,10 +108,39 @@ export async function studentsIn(deptName: string): Promise<Student[]> {
  *
  *     SELECT ..., danish_grade(t.grade) AS grade
  */
+
+/**
+ * Returns the courses taken by a student, ordered by course ID.
+ * Each result includes the course ID, course title, and Danish grade.
+ */
 export async function coursesFor(studentId: string): Promise<CourseRow[]> {
-  // TODO
-  throw new Error('not implemented');
+  // Join the takes table with the course table.
+  // The takes table stores which courses a student takes and their grades.
+  // The course table stores the course titles.
+
+  // Use danish_grade() in PostgreSQL to convert the American grade
+  // into the Danish 7-point scale. The function also handles NULL grades.
+
+  // Use $1 as a parameter for the student's ID.
+  // Parameterized queries safely pass values without building SQL strings.
+
+  const result = await pool.query<CourseRow>(
+    `SELECT
+       t.course_id AS "courseId",
+       c.title,
+       danish_grade(t.grade) AS grade
+     FROM takes AS t
+     JOIN course AS c ON c.course_id = t.course_id
+     WHERE t.id = $1
+     ORDER BY t.course_id`,
+    [studentId]
+  );
+
+  // Return all matching course rows.
+  // If the student takes no courses, result.rows will be an empty array [].
+  return result.rows;
 }
+
 
 // --- A3. Aggregating ------------------------------------------------------
 
