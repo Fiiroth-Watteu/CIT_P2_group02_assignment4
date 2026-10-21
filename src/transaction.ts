@@ -30,6 +30,29 @@ export interface EnrolInput {
  * Returns the student's new credit total.
  */
 export async function enrolInTypeScript(input: EnrolInput): Promise<number> {
-  // TODO
-  throw new Error('not implemented');
+  /* a transaction must run on one connection, so take a client from the pool */
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    /* grade is NULL: the student is enrolled but not graded yet */
+    await client.query(`INSERT INTO takes
+    (id, course_id, sec_id, semester, year, grade)
+    VALUES ($1, $2, $3, $4, $5, NULL)`,
+      [input.studentId, input.courseId, input.secId, input.semester, input.year]);
+    /* the credits are not in the input, so look them up in course */
+    const { rows } = await client.query(`SELECT credits FROM course WHERE course_id = $1`, [input.courseId]);
+    const credits = rows[0].credits;
+    /* RETURNING gives the new total back from the UPDATE */
+    const { rows: updated } = await client.query(`UPDATE student SET tot_cred = tot_cred + $1 WHERE id = $2 RETURNING tot_cred`, [credits, input.studentId]);
+    /* both statements succeeded, so make them permanent */
+    await client.query('COMMIT');
+    /* tot_cred is numeric, which pg returns as a string */
+    return Number(updated[0].tot_cred);
+  } catch (err) {
+    /* if anything failed, undo both statements and pass the error on */
+    await client.query('ROLLBACK'); throw err;
+  } finally {
+    /* always give the client back to the pool, also after an error */
+    client.release();
+  }
 }

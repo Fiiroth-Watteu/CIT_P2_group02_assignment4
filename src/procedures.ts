@@ -20,8 +20,12 @@ export interface TranscriptRow {
  * here as a rejected promise. Let it travel on: this one throws.
  */
 export async function transcriptOf(studentId: string): Promise<TranscriptRow[]> {
-  // TODO
-  throw new Error('not implemented');
+  /* the function returns course_id, so rename it to match TranscriptRow */
+  const { rows } = await pool.query<TranscriptRow>(
+    `SELECT course_id AS "courseId", title, grade FROM student_transcript($1)`,
+    [studentId]);
+  return rows;
+  //throw new Error('not implemented');
 }
 
 /**
@@ -34,8 +38,18 @@ export async function transcriptOf(studentId: string): Promise<TranscriptRow[]> 
  */
 export async function transcriptOrUndefined(
   studentId: string): Promise<TranscriptRow[] | undefined> {
-  // TODO
-  throw new Error('not implemented');
+    try {
+      /* await inside the try, otherwise the rejection escapes the catch */
+      return await transcriptOf(studentId);
+    } catch (err) {
+      /* P0001 is our own RAISE EXCEPTION: no such student */
+      if ((err as { code?: string }).code === 'P0001') {
+        return undefined;
+      }
+      /* any other error is a real failure, so pass it on */
+      throw err;
+    }
+  //throw new Error('not implemented');
 }
 
 /**
@@ -51,6 +65,10 @@ export async function transcriptOrUndefined(
 export async function enrolWithProcedure(
   studentId: string, courseId: string, secId: string,
   semester: string, year: number): Promise<number> {
-  // TODO
-  throw new Error('not implemented');
+    const r = await pool.query(
+      'CALL enrol_student($1, $2, $3, $4, $5, NULL)',
+      [studentId, courseId, secId, semester, year]);
+    /* the INOUT parameter comes back as a row; numeric arrives as a string */
+    return Number(r.rows[0].new_total);
+  //throw new Error('not implemented');
 }
