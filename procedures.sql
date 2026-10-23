@@ -11,7 +11,6 @@
 --
 -- If it is gone, the exercises folder has the file you wrote it in.
 
-
 -- B2. A FUNCTION that queries and returns a result set.
 --
 -- student_transcript(p_id) returns one row per course the student takes,
@@ -33,10 +32,19 @@ CREATE OR REPLACE FUNCTION student_transcript(p_id varchar)
 RETURNS TABLE (course_id varchar, title varchar, grade varchar)
 LANGUAGE plpgsql AS $$
 BEGIN
-  -- TODO: raise an exception when there is no such student
+ /* an unknown student is an error, not an empty transcript */
+  IF NOT EXISTS (SELECT 1 FROM student WHERE id = p_id) THEN
+    RAISE EXCEPTION 'No student with id %', p_id;
+  END IF;
 
-  -- TODO: return the courses this student takes, with converted grades
-  --       RETURN QUERY SELECT ... ;
+  /* table aliases and the p_ prefix avoid clashes with the output column
+     names; the casts make the types match RETURNS TABLE exactly */
+  RETURN QUERY
+    SELECT c.course_id::varchar, c.title::varchar, danish_grade(t.grade)::varchar
+    FROM takes t
+    JOIN course c ON c.course_id = t.course_id
+    WHERE t.id = p_id
+    ORDER BY c.course_id;
   RETURN;
 END;
 $$;
@@ -44,7 +52,6 @@ $$;
 -- Test it:
 --     SELECT * FROM student_transcript('00128');   -- two rows, grades 12 and 10
 --     SELECT * FROM student_transcript('99999');   -- an error
-
 
 -- B3. A PROCEDURE that changes several things.
 --
@@ -69,7 +76,19 @@ LANGUAGE plpgsql AS $$
 DECLARE
   v_credits numeric;
 BEGIN
-  -- TODO
+  /* look the credits up first, so an unknown course stops everything */
+  SELECT credits INTO v_credits FROM course WHERE course_id = p_course_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'No course with id %', p_course_id;
+  END IF;
+
+  INSERT INTO takes (id, course_id, sec_id, semester, year, grade)
+    VALUES (p_id, p_course_id, p_sec_id, p_semester, p_year, NULL);
+
+  /* INTO puts the new total in the INOUT parameter, which CALL returns as a row */
+  UPDATE student SET tot_cred = tot_cred + v_credits
+    WHERE id = p_id
+    RETURNING tot_cred INTO new_total;
   NULL;
 END;
 $$;

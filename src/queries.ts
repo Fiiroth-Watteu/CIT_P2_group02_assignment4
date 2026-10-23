@@ -146,24 +146,53 @@ export async function coursesFor(studentId: string): Promise<CourseRow[]> {
 
 /**
  * How many students each department has, ordered by department name.
- * Without the cast, count(*) arrives as a string. Try it both ways and
- * look at the type of what you get.
+ * The count is cast to an integer so TypeScript receives a number.
  */
 export async function studentsPerDepartment(): Promise<DeptCount[]> {
-  // TODO
-  throw new Error('not implemented');
+  // Count the students in each department and sort by department name.
+  const result = await pool.query<DeptCount>(
+    `SELECT
+       dept_name AS "deptName",
+       COUNT(*)::int AS students
+     FROM student
+     GROUP BY dept_name
+     ORDER BY dept_name`
+  );
+
+  // Return the department names and their student counts.
+  return result.rows;
 }
 
 // --- A4. Writing ----------------------------------------------------------
 
 /** Stores a student and returns the row the database stored. */
 export async function insertStudent(student: Student): Promise<Student> {
-  // TODO
-  throw new Error('not implemented');
+  // Insert a student using parameterized values.
+  // RETURNING retrieves the inserted row without a second query.
+  const result = await pool.query<Student>(
+    `INSERT INTO student (id, name, dept_name, tot_cred)
+     VALUES ($1, $2, $3, $4)
+     RETURNING
+       id,
+       name,
+       dept_name AS "deptName",
+       tot_cred::int AS "totCred"`,
+    [student.id, student.name, student.deptName, student.totCred]
+  );
+
+  // Return the row stored by the database.
+  return result.rows[0];
 }
 
 /** True when a row was deleted, false when there was nothing to delete. */
 export async function deleteStudent(id: string): Promise<boolean> {
-  // TODO
-  throw new Error('not implemented');
+  // Delete the student matching the supplied ID.
+  const result = await pool.query(
+    `DELETE FROM student
+     WHERE id = $1`,
+    [id]
+  );
+
+  // Return true if a row was deleted; otherwise return false.
+  return (result.rowCount ?? 0) > 0;
 }
