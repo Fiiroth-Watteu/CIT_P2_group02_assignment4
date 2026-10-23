@@ -1,7 +1,7 @@
 // Part C - asynchronous code against a real database
 
 import { pool } from './db.js';
-import { findStudent, coursesFor, deleteStudent } from './queries.js';
+import { findStudent, coursesFor, deleteStudent, CourseRow } from './queries.js';
 
 export interface Overview {
   students: number;
@@ -20,9 +20,12 @@ export interface Overview {
  */
 export async function firstCourseTitle(studentId: string): Promise<string | undefined> {
   // wip
+  //first find what courses the student takes. if student doesn't exist, should throw an error for student not found. if student isn't taking an courses, return empty string as the array will be empty. (maybe use tr...catch as i know that one better)
   try {
-    const foundStudent = coursesFor(studentId);
-    
+    const foundCourses = coursesFor(studentId);
+    const CourseTitle = await pool.query<CourseRow>(
+      `SELECT title FROM course WHERE course_id = $1` [foundCourses.]
+    )
   } catch (error) {
     return "student not found";
   }
